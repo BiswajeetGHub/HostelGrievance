@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/attempt-placeholder/+page.svelte";

@@ -1,2 +1,10 @@
-node_modules/ 
-.env 
+node_modules/
+.env
+.svelte-kit/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+security.log
+uploads/*
+!uploads/.gitkeep
+*.log
