@@ -76,7 +76,7 @@ describe('HostelGrievance API baseline', () => {
 		const logPath = join(dir, 'security.log');
 		await login(app, 'student@example.test', 'wrong');
 		const contents = readFileSync(logPath, 'utf8');
-		expect(contents).toMatch(/unknown 401 POST \/api\/login/);
+		expect(contents).toMatch(/127\.0\.0\.\d+ 401 POST \/api\/login/);
 	});
 
 	it('current-user works after login and fails after logout', async () => {

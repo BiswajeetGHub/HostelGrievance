@@ -279,10 +279,7 @@ grievanceRoutes.patch('/:id', async (c) => {
 				nextCategory = parseCategory(category);
 			}
 			if (status !== undefined) {
-				if (typeof status !== 'string') {
-					throw new HttpError(400, 'bad_request', 'Invalid grievance status.');
-				}
-				nextStatus = statusToDb(status);
+				throw new HttpError(403, 'unauthorized', 'Students cannot change grievance status.');
 			}
 			const ts = nowIso();
 			db.prepare(
