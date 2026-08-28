@@ -8,3 +8,4 @@ security.log
 uploads/*
 !uploads/.gitkeep
 *.log
+HostelGrievance/

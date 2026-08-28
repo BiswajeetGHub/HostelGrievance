@@ -1,3 +1,13 @@
+import { Hono } from 'hono';
+import type { AppEnv } from '../env.ts';
+import { getCookie } from 'hono/cookie';
+import { SESSION_COOKIE } from '../config.ts';
+import { createSession, clearSessionCookie, destroySession, requireUser, setSessionCookie } from '../auth/session.ts';
+import { verifyPassword, verifyDummyPassword } from '../auth/passwords.ts';
+import { findUserByEmail } from '../db/queries.ts';
+import { toPublicUser } from '../db/map.ts';
+import { HttpError } from '../http/errors.ts';
+
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): void {
@@ -18,16 +28,6 @@ function checkRateLimit(ip: string): void {
 		}
 	}
 }
-
-import { Hono } from 'hono';
-import type { AppEnv } from '../env.ts';
-import { getCookie } from 'hono/cookie';
-import { SESSION_COOKIE } from '../config.ts';
-import { createSession, clearSessionCookie, destroySession, requireUser, setSessionCookie } from '../auth/session.ts';
-import { verifyPassword, verifyDummyPassword } from '../auth/passwords.ts';
-import { findUserByEmail } from '../db/queries.ts';
-import { toPublicUser } from '../db/map.ts';
-import { HttpError } from '../http/errors.ts';
 
 export const authRoutes = new Hono<AppEnv>();
 

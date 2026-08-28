@@ -1,8 +1,31 @@
-﻿HARDENING.md  -  HostelGrievance Security Improvements
+HARDENING.md  -  HostelGrievance Security Improvements
 =======================================================
 
-OVERVIEW
---------
+SUMMARY TABLE
+-------------
+
+| ID | Finding | Risk | Change | Verification | Residual Risk |
+|----|---------|------|--------|--------------|---------------|
+| H-01 | Broken Access Control (IDOR) | CRITICAL | Added ownership checks to all grievance/attachment routes | Logged in as two students, cross-access returns 403 | None |
+| H-02 | Stored XSS via {@html} | CRITICAL | Replaced {@html} with safe text interpolation | Injected script tags in comments, rendered as plain text | None |
+| H-03 | Session not destroyed on logout | CRITICAL | Added destroySession() to DELETE token from DB on logout | Reused old session cookie after logout, got 401 | None |
+| H-04 | Session expiry not enforced | HIGH | Added expires_at check in readSessionUser(), auto-deletes expired rows | Tested with expired session, got 401 | None |
+| H-05 | Weak password storage (SHA-256) | CRITICAL | Replaced SHA-256 with bcrypt (12 rounds), re-hashed all seeds | Verified DB contains $2b$12$ hashes, old sha256: hashes rejected | None for new passwords |
+| H-06 | Path traversal on file upload | CRITICAL | newStoredName() ignores user filename, generates random hex | Uploaded file named ../../etc/passwd, stored as random hex | None |
+| H-07 | Session cookie missing security flags | HIGH | Added httpOnly, Secure, SameSite=Lax to session cookie | Inspected Set-Cookie header in DevTools | Cookie not sent over plain HTTP in production |
+| H-08 | Uploaded files rendered inline (XSS) | HIGH | Changed Content-Disposition from inline to attachment | Uploaded HTML file, browser downloaded instead of rendering | None |
+| H-09 | CORS open to all origins | HIGH | Restricted CORS origin to http://localhost:5173 | Fetched from different origin, got CORS error | Must update origin for production domain |
+| H-10 | Missing HTTP security headers | MEDIUM | Added X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy, Permissions-Policy | Inspected response headers in DevTools | None |
+| H-11 | No brute force protection | HIGH | Added IP-based rate limiter: 5 attempts per minute | Sent 6 wrong passwords, 6th returned 429 | In-memory store resets on restart |
+| H-12 | No security event logging | MEDIUM | Log 401/403/429 events to security.log with timestamp, IP, method, path | Triggered failed login, checked log file | Log rotation not implemented |
+| H-13 | User enumeration via timing | HIGH | Added verifyDummyPassword() for non-existent users | Timed responses for real vs fake emails, similar duration | Timing still leaks slightly under load |
+| H-14 | MIME type spoofing on upload | HIGH | Added magic bytes verification for JPEG, PNG, GIF, WebP | Uploaded text file with image/png MIME, got 400 | Only 4 image types checked |
+| H-15 | Internal errors leaked to users | HIGH | Error handler returns generic messages, no stack traces | Triggered 500 error, response has no file paths or SQL | None |
+| H-16 | No input length limits (DoS) | HIGH | Added max lengths: title 200, description 5000, comment 2000, email 254, password 72 | Sent 10000-char title, got 400 | No request body size limit at HTTP level |
+| H-17 | SQLite BUSY crashes under load | MEDIUM | Added busy_timeout=5000 pragma | Concurrent writes succeed without SQLITE_BUSY | Not suited for very high concurrency |
+
+DETAILED FINDINGS
+-----------------
 17 security vulnerabilities were found and fixed across:
   - Authentication and session management
   - Access control (who can see what)
