@@ -55,6 +55,7 @@ export function setSessionCookie(c: Context, token: string): void {
 		path: '/',
 		maxAge: SESSION_TTL_SECONDS,
 		httpOnly: true,
+		secure: true,
 		sameSite: 'Lax'
 	});
 }

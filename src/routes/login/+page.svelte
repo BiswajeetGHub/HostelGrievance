@@ -96,10 +96,5 @@
 			</CardContent>
 		</Card>
 
-		<p class="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
-			Demo environment — development credentials only:<br />
-			Student: student@example.test / student123<br />
-			Warden: warden@example.test / warden123
-		</p>
 	</div>
 </main>

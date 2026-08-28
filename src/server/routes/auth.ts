@@ -11,6 +11,12 @@ function checkRateLimit(ip: string): void {
 	} else {
 		loginAttempts.set(ip, { count: 1, resetAt: now + 60_000 });
 	}
+	// Periodic cleanup of expired entries to prevent memory leak
+	if (loginAttempts.size > 1000) {
+		for (const [key, val] of loginAttempts) {
+			if (now >= val.resetAt) loginAttempts.delete(key);
+		}
+	}
 }
 
 import { Hono } from 'hono';
@@ -18,7 +24,7 @@ import type { AppEnv } from '../env.ts';
 import { getCookie } from 'hono/cookie';
 import { SESSION_COOKIE } from '../config.ts';
 import { createSession, clearSessionCookie, destroySession, requireUser, setSessionCookie } from '../auth/session.ts';
-import { verifyPassword } from '../auth/passwords.ts';
+import { verifyPassword, verifyDummyPassword } from '../auth/passwords.ts';
 import { findUserByEmail } from '../db/queries.ts';
 import { toPublicUser } from '../db/map.ts';
 import { HttpError } from '../http/errors.ts';
@@ -44,8 +50,21 @@ authRoutes.post('/login', async (c) => {
 	if (!email || !password) {
 		throw new HttpError(400, 'bad_request', 'Email and password are required.');
 	}
+	if (email.length > 254) {
+		throw new HttpError(400, 'bad_request', 'Email address is too long.');
+	}
+	if (password.length > 72) {
+		throw new HttpError(400, 'bad_request', 'Password is too long.');
+	}
 	const user = findUserByEmail(db, email);
-	if (!user || !verifyPassword(password, user.password_hash)) {
+	let valid = false;
+	if (user) {
+		valid = verifyPassword(password, user.password_hash);
+	} else {
+		verifyDummyPassword(password);
+	}
+
+	if (!user || !valid) {
 		throw new HttpError(401, 'unauthenticated', 'Invalid email or password.');
 	}
 	const token = createSession(db, user.id);

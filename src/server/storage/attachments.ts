@@ -36,7 +36,7 @@ export function newStoredName(mime: string): string {
 	return `${randomBytes(16).toString('hex')}${extensionForMime(mime)}`;
 }
 
-export function assertPermittedAttachment(mime: string, size: number): void {
+export function assertPermittedAttachment(mime: string, size: number, bytes: Buffer): void {
 	if (!ALLOWED_ATTACHMENT_TYPES.has(mime)) {
 		throw new HttpError(400, 'bad_request', 'Attachments must be JPEG, PNG, GIF, or WebP images.');
 	}
@@ -46,11 +46,31 @@ export function assertPermittedAttachment(mime: string, size: number): void {
 	if (size > MAX_ATTACHMENT_BYTES) {
 		throw new HttpError(400, 'bad_request', 'Attachment must be 2 MB or smaller.');
 	}
+	if (!verifyMagicBytes(mime, bytes)) {
+		throw new HttpError(400, 'bad_request', 'File content does not match the declared type.');
+	}
+}
+
+function verifyMagicBytes(mime: string, bytes: Buffer): boolean {
+	if (bytes.length < 4) return false;
+	switch (mime) {
+		case 'image/jpeg':
+			return bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+		case 'image/png':
+			return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
+		case 'image/gif':
+			return bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
+		case 'image/webp':
+			return bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+				&& bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+		default:
+			return false;
+	}
 }
 
 export async function bufferFromUpload(file: File): Promise<Buffer> {
 	const bytes = Buffer.from(await file.arrayBuffer());
-	assertPermittedAttachment(file.type, bytes.byteLength);
+	assertPermittedAttachment(file.type, bytes.byteLength, bytes);
 	return bytes;
 }
 

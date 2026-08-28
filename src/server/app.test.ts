@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -44,7 +44,7 @@ describe('HostelGrievance API baseline', () => {
 		db = openDatabase(join(dir, 'hostel.db'));
 		const uploadDir = join(dir, 'uploads');
 		seedDatabase(db, uploadDir);
-		app = createApp({ db, uploadsDir: uploadDir });
+		app = createApp({ db, uploadsDir: uploadDir, securityLogPath: join(dir, 'security.log') });
 	});
 
 	afterEach(() => {
@@ -70,6 +70,13 @@ describe('HostelGrievance API baseline', () => {
 		const bad = await login(app, 'student@example.test', 'wrong');
 		expect(bad.res.status).toBe(401);
 		expect(bad.json.code).toBe('unauthenticated');
+	});
+
+	it('appends 401/403/429 events to a durable security log file', async () => {
+		const logPath = join(dir, 'security.log');
+		await login(app, 'student@example.test', 'wrong');
+		const contents = readFileSync(logPath, 'utf8');
+		expect(contents).toMatch(/unknown 401 POST \/api\/login/);
 	});
 
 	it('current-user works after login and fails after logout', async () => {

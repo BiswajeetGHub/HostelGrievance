@@ -1,6 +1,8 @@
+import { appendFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import type { Database } from 'better-sqlite3';
 import type { AppEnv } from './env.ts';
+import { DEFAULT_SECURITY_LOG_PATH } from './config.ts';
 import { handleError, HttpError } from './http/errors.ts';
 import { authRoutes } from './routes/auth.ts';
 import { grievanceRoutes } from './routes/grievances.ts';
@@ -10,6 +12,7 @@ import { cors } from 'hono/cors';
 export type CreateAppOptions = {
 	db: Database;
 	uploadsDir: string;
+	securityLogPath?: string;
 };
 
 export function createApp(options: CreateAppOptions) {
@@ -29,6 +32,8 @@ export function createApp(options: CreateAppOptions) {
 		c.header('X-Content-Type-Options', 'nosniff');
 		c.header('X-Frame-Options', 'DENY');
 		c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+		c.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+		c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 	});
 	app.use('*', async (c, next) => {
 		await next();
@@ -37,7 +42,13 @@ export function createApp(options: CreateAppOptions) {
 		const path = c.req.path;
 		const ip = c.req.header('x-forwarded-for') ?? 'unknown';
 		if (status === 401 || status === 403 || status === 429) {
-			console.log(`[SECURITY] ${new Date().toISOString()} ${method} ${path} → ${status} ip=${ip}`);
+			const at = new Date().toISOString();
+			const route = `${method} ${path}`;
+			console.log(`[SECURITY] ${at} ${route} → ${status} ip=${ip}`);
+			appendFileSync(
+				options.securityLogPath ?? DEFAULT_SECURITY_LOG_PATH,
+				`${at} ${ip} ${status} ${route}\n`
+			);
 		}
 	});
 

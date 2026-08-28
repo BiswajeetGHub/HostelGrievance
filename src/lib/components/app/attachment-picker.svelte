@@ -5,6 +5,7 @@
 	import PaperclipIcon from '@lucide/svelte/icons/paperclip';
 	import XIcon from '@lucide/svelte/icons/x';
 	import type { AttachmentInput } from '$lib/services/types';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		selected = null,
@@ -31,7 +32,15 @@
 	function handleChange(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
-		if (file) onSelect(file);
+		if (!file) return;
+
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error('File size exceeds the 2 MB limit.');
+			if (inputEl) inputEl.value = '';
+			return;
+		}
+
+		onSelect(file);
 	}
 
 	function handleRemove() {

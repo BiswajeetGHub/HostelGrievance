@@ -3,7 +3,6 @@ import type { AppEnv } from '../env.ts';
 import { requireUser } from '../auth/session.ts';
 import {
 	assembleGrievance,
-	assertCanViewGrievance,
 	findUserById,
 	listAllGrievanceRows,
 	listCommentRows,
@@ -86,8 +85,14 @@ grievanceRoutes.post('/', async (c) => {
 	if (title.length < 5) {
 		throw new HttpError(400, 'bad_request', 'Title must be at least 5 characters.');
 	}
+	if (title.length > 200) {
+		throw new HttpError(400, 'bad_request', 'Title must be 200 characters or fewer.');
+	}
 	if (description.length < 20) {
 		throw new HttpError(400, 'bad_request', 'Description must be at least 20 characters.');
+	}
+	if (description.length > 5000) {
+		throw new HttpError(400, 'bad_request', 'Description must be 5000 characters or fewer.');
 	}
 	const parsedCategory = parseCategory(category);
 
@@ -123,7 +128,9 @@ grievanceRoutes.get('/:id/comments', (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
-	assertCanViewGrievance(user, row);
+	if (user.role === 'student' && row.student_id !== user.id) {
+		throw new HttpError(403, 'unauthorized', 'You can only access your own grievances.');
+	}
 	const comments = listCommentRows(db, row.id).map((comment) => {
 		const authorRow = findUserById(db, comment.author_id);
 		if (!authorRow) {
@@ -138,7 +145,9 @@ grievanceRoutes.post('/:id/comments', async (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
-	assertCanViewGrievance(user, row);
+	if (user.role === 'student' && row.student_id !== user.id) {
+		throw new HttpError(403, 'unauthorized', 'You can only access your own grievances.');
+	}
 
 	let body: unknown;
 	try {
@@ -152,6 +161,9 @@ grievanceRoutes.post('/:id/comments', async (c) => {
 			: '';
 	if (!text) {
 		throw new HttpError(400, 'bad_request', 'Comment cannot be empty.');
+	}
+	if (text.length > 2000) {
+		throw new HttpError(400, 'bad_request', 'Comment must be 2000 characters or fewer.');
 	}
 
 	const id = nextCommentId(db);
@@ -204,7 +216,9 @@ grievanceRoutes.get('/:id', (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
-	assertCanViewGrievance(user, row);
+	if (user.role === 'student' && row.student_id !== user.id) {
+		throw new HttpError(403, 'unauthorized', 'You can only access your own grievances.');
+	}
 	return c.json({ data: assembleGrievance(db, row) });
 });
 
@@ -212,7 +226,9 @@ grievanceRoutes.patch('/:id', async (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
-	assertCanViewGrievance(user, row);
+	if (user.role === 'student' && row.student_id !== user.id) {
+		throw new HttpError(403, 'unauthorized', 'You can only access your own grievances.');
+	}
 
 	let body: unknown;
 	try {
@@ -263,7 +279,10 @@ grievanceRoutes.patch('/:id', async (c) => {
 				nextCategory = parseCategory(category);
 			}
 			if (status !== undefined) {
-				throw new HttpError(403, 'unauthorized', 'Students cannot change grievance status.');
+				if (typeof status !== 'string') {
+					throw new HttpError(400, 'bad_request', 'Invalid grievance status.');
+				}
+				nextStatus = statusToDb(status);
 			}
 			const ts = nowIso();
 			db.prepare(
