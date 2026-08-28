@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Database } from 'better-sqlite3';
 import { createApp } from './app.ts';
 import { openDatabase } from './db/connection.ts';
 import { seedDatabase } from './db/seed.ts';
@@ -21,10 +22,12 @@ function cookieHeader(res: Response): string {
 	return raw ? raw.split(';')[0] : '';
 }
 
+let testIpCounter = 0;
 async function login(app: ReturnType<typeof createApp>, email: string, password: string) {
+	testIpCounter++;
 	const res = await app.request('/api/login', {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'application/json', 'x-forwarded-for': `127.0.0.${testIpCounter}` },
 		body: JSON.stringify({ email, password })
 	});
 	const json = await res.json();
@@ -34,16 +37,18 @@ async function login(app: ReturnType<typeof createApp>, email: string, password:
 describe('HostelGrievance API baseline', () => {
 	let dir: string;
 	let app: ReturnType<typeof createApp>;
+	let db: Database;
 
 	beforeEach(() => {
 		dir = mkdtempSync(join(tmpdir(), 'hg-api-'));
-		const db = openDatabase(join(dir, 'hostel.db'));
+		db = openDatabase(join(dir, 'hostel.db'));
 		const uploadDir = join(dir, 'uploads');
 		seedDatabase(db, uploadDir);
 		app = createApp({ db, uploadsDir: uploadDir });
 	});
 
 	afterEach(() => {
+		db.close();
 		rmSync(dir, { recursive: true, force: true });
 	});
 

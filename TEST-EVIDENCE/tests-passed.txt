@@ -1,0 +1,9 @@
+> hostelgrievance@0.0.1 test
+> vitest run
+
+ RUN  v4.1.11 C:/Users/DELL/Desktop/Learnathon Source CODE/GIET-Learnathon-5.0-main
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  20:39:48
+   Duration  60.19s (transform 517ms, setup 0ms, import 830ms, tests 58.70s, environment 0ms)

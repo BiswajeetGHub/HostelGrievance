@@ -10,11 +10,10 @@ hostel grievances and wardens to review and resolve them. It is built with Svelt
 
 ## Major Security Improvements
 
-### 1. Broken Access Control (IDOR) — Fixed
-Students could previously read any other student's grievance by guessing the grievance ID.
-The server had an `assertCanViewGrievance()` function written but never called it in the
-GET `/grievances/:id` and GET `/grievances/:id/comments` routes. This has been fixed by
-enforcing ownership checks on every grievance read.
+### 1. Broken Access Control (IDOR and Privilege Escalation) — Fixed
+Students could previously read, update, or comment on any other student's grievance, and view any attachment, by guessing the respective ID.
+The server had an `assertCanViewGrievance()` function written but never called it. This has been fixed by
+enforcing ownership checks on every grievance read, update, comment creation, and attachment download. Additionally, a vulnerability allowing students to arbitrarily change the status of their own grievances (bypassing the warden workflow) was fixed by rejecting `status` updates from student accounts.
 
 ### 2. Session Management — Fixed
 - Logout only cleared the browser cookie but never deleted the session from the database.

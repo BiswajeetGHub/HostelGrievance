@@ -64,13 +64,13 @@
 
 ## Important Attack Paths
 
-### Attack Path 1 — Insecure Direct Object Reference (IDOR)
+### Attack Path 1 — Insecure Direct Object Reference (IDOR) & Privilege Escalation
 ```
 Attacker logs in as Student A
 → Observes grievance ID format (GRV-0001)
-→ Requests GET /api/grievances/GRV-0002 (belongs to Student B)
-→ Server previously returned full grievance data
-→ FIXED: assertCanViewGrievance() now enforced on every read
+→ Requests GET /api/grievances/GRV-0002 (belongs to Student B) or attempts to PATCH it.
+→ Server previously returned full grievance data or accepted modifications.
+→ FIXED: assertCanViewGrievance() now enforced on every read, update, comment creation, and attachment download. Students are also prevented from updating the `status` of their own grievances.
 ```
 
 ### Attack Path 2 — Session Token Theft After Logout

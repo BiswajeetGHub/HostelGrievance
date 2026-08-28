@@ -3,6 +3,7 @@ import type { AppEnv } from '../env.ts';
 import { requireUser } from '../auth/session.ts';
 import {
 	assembleGrievance,
+	assertCanViewGrievance,
 	findUserById,
 	listAllGrievanceRows,
 	listCommentRows,
@@ -120,8 +121,9 @@ grievanceRoutes.post('/', async (c) => {
 
 grievanceRoutes.get('/:id/comments', (c) => {
 	const db = c.get('db');
-	requireUser(c, db);
+	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
+	assertCanViewGrievance(user, row);
 	const comments = listCommentRows(db, row.id).map((comment) => {
 		const authorRow = findUserById(db, comment.author_id);
 		if (!authorRow) {
@@ -136,6 +138,7 @@ grievanceRoutes.post('/:id/comments', async (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
+	assertCanViewGrievance(user, row);
 
 	let body: unknown;
 	try {
@@ -199,8 +202,9 @@ grievanceRoutes.post('/:id/attachments', async (c) => {
 
 grievanceRoutes.get('/:id', (c) => {
 	const db = c.get('db');
-	requireUser(c, db);
+	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
+	assertCanViewGrievance(user, row);
 	return c.json({ data: assembleGrievance(db, row) });
 });
 
@@ -208,6 +212,7 @@ grievanceRoutes.patch('/:id', async (c) => {
 	const db = c.get('db');
 	const user = requireUser(c, db);
 	const row = requireGrievance(db, c.req.param('id'));
+	assertCanViewGrievance(user, row);
 
 	let body: unknown;
 	try {
@@ -258,10 +263,7 @@ grievanceRoutes.patch('/:id', async (c) => {
 				nextCategory = parseCategory(category);
 			}
 			if (status !== undefined) {
-				if (typeof status !== 'string') {
-					throw new HttpError(400, 'bad_request', 'Invalid grievance status.');
-				}
-				nextStatus = statusToDb(status);
+				throw new HttpError(403, 'unauthorized', 'Students cannot change grievance status.');
 			}
 			const ts = nowIso();
 			db.prepare(
