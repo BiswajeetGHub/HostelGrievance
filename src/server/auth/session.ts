@@ -36,6 +36,10 @@ export function readSessionUser(db: Database, token: string): SessionUser | unde
 		)
 		.get(token) as (SessionUser & { expires_at: string }) | undefined;
 	if (!row) return undefined;
+	if (new Date(row.expires_at) < new Date()) {
+		db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+		return undefined;
+	}
 	return {
 		id: row.id,
 		name: row.name,
@@ -49,7 +53,9 @@ export function readSessionUser(db: Database, token: string): SessionUser | unde
 export function setSessionCookie(c: Context, token: string): void {
 	setCookie(c, SESSION_COOKIE, token, {
 		path: '/',
-		maxAge: SESSION_TTL_SECONDS
+		maxAge: SESSION_TTL_SECONDS,
+		httpOnly: true,
+		sameSite: 'Lax'
 	});
 }
 
@@ -64,6 +70,7 @@ export function requireUser(c: Context, db: Database): SessionUser {
 	}
 	const user = readSessionUser(db, token);
 	if (!user) {
+		destroySession(db, token);
 		throw new HttpError(401, 'unauthenticated', 'Authentication required.');
 	}
 	return user;

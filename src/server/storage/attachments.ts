@@ -32,8 +32,8 @@ export function extensionForMime(mime: string): string {
 	return MIME_EXTENSION[mime] ?? '.bin';
 }
 
-export function newStoredName(mime: string, originalName?: string): string {
-	return originalName ?? `${randomBytes(16).toString('hex')}${extensionForMime(mime)}`;
+export function newStoredName(mime: string): string {
+	return `${randomBytes(16).toString('hex')}${extensionForMime(mime)}`;
 }
 
 export function assertPermittedAttachment(mime: string, size: number): void {

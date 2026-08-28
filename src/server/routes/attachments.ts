@@ -20,7 +20,7 @@ attachmentRoutes.get('/:id', (c) => {
 	c.header('Content-Length', String(bytes.length));
 	c.header(
 		'Content-Disposition',
-		`inline; filename="${row.original_filename.replaceAll('"', '')}"`
+		`attachment; filename="${row.original_filename.replaceAll('"', '')}"`
 	);
 	return c.body(new Uint8Array(bytes));
 });

@@ -20,7 +20,26 @@ export function createApp(options: CreateAppOptions) {
 		c.set('uploadsDir', options.uploadsDir);
 		await next();
 	});
-	app.use('/api/*', cors({ origin: (origin) => origin ?? '*', credentials: true }));
+	app.use('/api/*', cors({
+		origin: 'http://localhost:5173',
+		credentials: true
+	}));
+	app.use('*', async (c, next) => {
+		await next();
+		c.header('X-Content-Type-Options', 'nosniff');
+		c.header('X-Frame-Options', 'DENY');
+		c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+	});
+	app.use('*', async (c, next) => {
+		await next();
+		const status = c.res.status;
+		const method = c.req.method;
+		const path = c.req.path;
+		const ip = c.req.header('x-forwarded-for') ?? 'unknown';
+		if (status === 401 || status === 403 || status === 429) {
+			console.log(`[SECURITY] ${new Date().toISOString()} ${method} ${path} → ${status} ip=${ip}`);
+		}
+	});
 
 	app.onError((err, c) => handleError(err, c));
 

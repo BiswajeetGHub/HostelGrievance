@@ -1,6 +1,23 @@
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string): void {
+	const now = Date.now();
+	const record = loginAttempts.get(ip);
+	if (record && now < record.resetAt) {
+		if (record.count >= 5) {
+			throw new HttpError(429, 'too_many_requests', 'Too many login attempts. Wait 1 minute.');
+		}
+		record.count++;
+	} else {
+		loginAttempts.set(ip, { count: 1, resetAt: now + 60_000 });
+	}
+}
+
 import { Hono } from 'hono';
 import type { AppEnv } from '../env.ts';
-import { createSession, clearSessionCookie, requireUser, setSessionCookie } from '../auth/session.ts';
+import { getCookie } from 'hono/cookie';
+import { SESSION_COOKIE } from '../config.ts';
+import { createSession, clearSessionCookie, destroySession, requireUser, setSessionCookie } from '../auth/session.ts';
 import { verifyPassword } from '../auth/passwords.ts';
 import { findUserByEmail } from '../db/queries.ts';
 import { toPublicUser } from '../db/map.ts';
@@ -9,6 +26,9 @@ import { HttpError } from '../http/errors.ts';
 export const authRoutes = new Hono<AppEnv>();
 
 authRoutes.post('/login', async (c) => {
+	const ip = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
+	checkRateLimit(ip);
+	
 	const db = c.get('db');
 	let body: unknown;
 	try {
@@ -34,6 +54,9 @@ authRoutes.post('/login', async (c) => {
 });
 
 authRoutes.post('/logout', (c) => {
+	const db = c.get('db');
+	const token = getCookie(c, SESSION_COOKIE);
+	if (token) destroySession(db, token);
 	clearSessionCookie(c);
 	return c.json({ ok: true });
 });
