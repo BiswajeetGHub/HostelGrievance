@@ -4,6 +4,15 @@
  RUN  v4.1.11 C:/Users/DELL/Desktop/Learnathon Source CODE/GIET-Learnathon-5.0-main
 
  Test Files  1 passed (1)
-      Tests  14 passed (14)
-   Start at  20:39:48
-   Duration  60.19s (transform 517ms, setup 0ms, import 830ms, tests 58.70s, environment 0ms)
+      Tests  15 passed (15)
+   Start at  22:11:46
+   Duration  51.63s (transform 451ms, setup 0ms, import 1.64s, tests 49.42s, environment 0ms)
+
+---
+
+TYPECHECK:
+> hostelgrievance@0.0.1 typecheck
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p tsconfig.server.json
+
+svelte-check found 0 errors and 0 warnings
+TypeScript: 0 errors
