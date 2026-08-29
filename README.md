@@ -1,6 +1,8 @@
-# HostelGrievance - Team BlockByBlock Smallest Blast Radius Solution
+# HostelGrievance : Team BlockByBlock Smallest Blast Radius Solution
 
-University hostel grievance portal — Svelte 5 UI plus a small local Hono + SQLite API. Built as a security-lab baseline, not a production platform.
+(PLEASE IGNORE This file, IT is kept same as initial)
+
+University hostel grievance portal : Svelte 5 UI plus a small local Hono + SQLite API. Built as a security-lab baseline, not a production platform.
 
 ## Install
 
