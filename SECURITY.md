@@ -1,6 +1,6 @@
 # SECURITY.md — HostelGrievance Final Security Posture
 
-## What We Started With
+## 1) What We Started With
 
 The starter app had working student and warden workflows — and almost no server-side
 security. The frontend made trust decisions that the backend never enforced. Any logged-in
@@ -19,9 +19,9 @@ we treated as attacker-controlled input.
 ### Authorization — IDOR across four routes
 
 The ownership check function `assertCanViewGrievance()` existed in the codebase.
-It just was not being called on GET requests.
+It just was NOT being called on GET requests.
 
-We added it to every route that touches a grievance: read, update, comment, and
+why we added it?: We added it to every route that touches a grievance: read, update, comment, and
 attachment download. A student now gets a hard 403 on any resource they did not create.
 We also blocked students from setting grievance status — that field now returns 403
 unless the session belongs to a warden.
@@ -31,8 +31,8 @@ unless the session belongs to a warden.
 SHA-256 is a fast hashing algorithm. That is the problem. An attacker with the database
 file can run billions of SHA-256 attempts per second on commodity hardware.
 
-We replaced it with bcrypt at 12 rounds. Each guess now takes ~300ms. We also made the
-server run bcrypt even when the email does not exist — previously, an invalid email
+Soo We replaced it with bcrypt at 12 rounds. Each guess now takes around-ish ~300ms. We also made the
+server run bcrypt even when the email does not exist. previously, an invalid email
 returned instantly while a valid one took 300ms, leaking which addresses are registered.
 
 ### Sessions — three separate gaps closed
