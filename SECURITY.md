@@ -1,6 +1,6 @@
 # SECURITY.md — HostelGrievance Final Security Posture
 
-## 1) What We Started With
+## A. What We Started With
 
 The starter app had working student and warden workflows — and almost no server-side
 security. The frontend made trust decisions that the backend never enforced. Any logged-in
@@ -14,11 +14,11 @@ we treated as attacker-controlled input.
 
 ---
 
-## What We Fixed
+## B. What We Fixed
 
-### Authorization — IDOR across four routes
+### 1) Authorization: IDOR across four routes
 
-The ownership check function `assertCanViewGrievance()` existed in the codebase.
+The ownership check function `assertCanViewGrievance()` existed in the codebase, BUT 
 It just was NOT being called on GET requests.
 
 why we added it?: We added it to every route that touches a grievance: read, update, comment, and
@@ -26,7 +26,7 @@ attachment download. A student now gets a hard 403 on any resource they did not 
 We also blocked students from setting grievance status — that field now returns 403
 unless the session belongs to a warden.
 
-### Passwords — SHA-256 to bcrypt
+### 2) Passwords: SHA-256 to bcrypt
 
 SHA-256 is a fast hashing algorithm. That is the problem. An attacker with the database
 file can run billions of SHA-256 attempts per second on commodity hardware.
@@ -35,20 +35,20 @@ Soo We replaced it with bcrypt at 12 rounds. Each guess now takes around-ish ~30
 server run bcrypt even when the email does not exist. previously, an invalid email
 returned instantly while a valid one took 300ms, leaking which addresses are registered.
 
-### Sessions — three separate gaps closed
+### 3) Sessions: three separate gaps closed
 
 Logout only cleared the cookie. The session row stayed in the database. A stolen token
 worked indefinitely after the user logged out. We call destroySession() before clearing
 the cookie now.
 
-expires_at was stored in the sessions table but never read. We added the check.
+'expires_at' was stored in the sessions table but never read. We added the check.
 Expired sessions are deleted on first use.
 
 The session cookie had no httpOnly or SameSite flags. JavaScript in the page could
 read it. Cross-site requests attached it automatically. We added httpOnly: true and
 SameSite=Lax.
 
-### File Handling — three separate gaps closed
+### 4) File Handling: three separate gaps closed
 
 Original filenames were used as stored filenames on disk. writeStoredFile() had no
 path traversal check. We removed the originalName parameter entirely. Stored filenames
@@ -63,33 +63,33 @@ gets rejected with 400.
 Files were served with Content-Disposition: inline. Browsers render inline content.
 We changed it to attachment. The browser now downloads the file instead of opening it.
 
-### Input Limits
+### 5) Input Limits
 
-No length limits existed on any text field. We capped titles at 200 characters,
+No length limits existed on any text field. So We capped titles at 200 characters,
 descriptions at 5000, and comments at 2000. Passwords are capped at 72 bytes because
-bcrypt silently truncates longer inputs — which would let an attacker log in with any
+bcrypt silently truncates longer inputs which would let an attacker log in with any
 suffix of a long password.
 
-### Rate Limiting
+### 6) Rate Limiting
 
 We added an in-memory rate limiter on POST /api/login. Five wrong attempts from the
 same IP triggers a 429 for 60 seconds. We chose IP-based limiting over account lockout
-deliberately — account lockout requires schema changes and we were not willing to risk
+deliberately BUT account lockout requires schema changes and we were not willing to risk
 breaking the grading environment's database.
 
-### Logging
+### 7) Logging
 
 Nothing was logged before. We added a middleware that writes to security.log on every
 401, 403, and 429 — timestamp, IP, method, path, status. An administrator can now see
 failed logins, unauthorized access attempts, and rate-limit triggers.
 
-### XSS
+### 8) XSS
 
 Svelte escapes text by default. The original code had {@html ...} interpolations in
 two places that bypassed that. We removed them. Comments and grievance content now render
 as plain text regardless of what they contain.
 
-### Error Messages
+### 9) Error Messages
 
 Unhandled errors previously sent raw Node.js error objects to the client — including
 file paths, OS details, and stack traces. All unhandled errors now return
@@ -97,21 +97,21 @@ file paths, OS details, and stack traces. All unhandled errors now return
 
 ---
 
-## Deployment Assumptions
+## C. Deployment Assumptions
 
-The app currently runs with origin: 'http://localhost:5173' in CORS config.
+1. The app currently runs with origin: 'http://localhost:5173' in CORS config.
 That must change to the production domain before public launch.
 
-Session cookies have Secure: true. This requires HTTPS at the infrastructure layer.
+2. Session cookies have Secure: true. This requires HTTPS at the infrastructure layer.
 We assume a reverse proxy (Nginx or equivalent) handles TLS termination.
 
-The data/ and uploads/ directories must be writable by the Node process but must
+3. The data/ and uploads/ directories must be writable by the Node process but must
 not be served as static files. The uploads folder serves files only through the
 authenticated /api/attachments/:id route.
 
 ---
 
-## What We Did Not Fix (and why)
+## D. What We Did Not Fix (and why)
 
 | Residual Risk | Why We Left It |
 |---------------|----------------|
