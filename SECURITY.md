@@ -1,4 +1,4 @@
-# SECURITY.md — HostelGrievance Final Security Posture
+# SECURITY.md; HostelGrievance Final Security CHANGES SUMMARY
 
 ## A. What We Started With
 
