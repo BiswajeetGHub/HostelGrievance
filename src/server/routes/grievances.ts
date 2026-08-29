@@ -98,15 +98,20 @@ grievanceRoutes.post('/', async (c) => {
 
 	const id = nextGrievanceId(db);
 	const ts = nowIso();
+	
+	let uploadBytes: Uint8Array | undefined;
+	if (upload) {
+		uploadBytes = await bufferFromUpload(upload);
+	}
+
 	db.prepare(
 		`INSERT INTO grievances (id, student_id, title, category, description, status, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`
 	).run(id, user.id, title, parsedCategory, description, ts, ts);
 
-	if (upload) {
-		const bytes = await bufferFromUpload(upload);
+	if (upload && uploadBytes) {
 		const stored = newStoredName(upload.type);
-		writeStoredFile(uploadsDir, stored, bytes);
+		writeStoredFile(uploadsDir, stored, uploadBytes);
 		db.prepare(
 			`INSERT INTO attachments (id, grievance_id, original_filename, stored_filename, mime_type, size_bytes, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
@@ -116,7 +121,7 @@ grievanceRoutes.post('/', async (c) => {
 			originalBasename(upload.name),
 			stored,
 			upload.type,
-			bytes.byteLength,
+			uploadBytes.byteLength,
 			ts
 		);
 	}
