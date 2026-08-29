@@ -109,6 +109,9 @@ We assume a reverse proxy (Nginx or equivalent) handles TLS termination.
 not be served as static files. The uploads folder serves files only through the
 authenticated /api/attachments/:id route.
 
+4. Assuming that we must not add ui changes, which could break functionality or may introduce more ways
+to hack or create more vulnerabilities, we tried to keep a defensive + offensive backend only changes. 
+
 ---
 
 ## D. What We Did Not Fix (and why)
