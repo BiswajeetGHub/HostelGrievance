@@ -29,6 +29,10 @@ function checkRateLimit(ip: string): void {
 	}
 }
 
+export function banIp(ip: string): void {
+	loginAttempts.set(ip, { count: 999, resetAt: Date.now() + 3600_000 });
+}
+
 export const authRoutes = new Hono<AppEnv>();
 
 authRoutes.post('/login', async (c) => {

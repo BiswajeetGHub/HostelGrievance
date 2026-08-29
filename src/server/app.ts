@@ -4,7 +4,7 @@ import type { Database } from 'better-sqlite3';
 import type { AppEnv } from './env.ts';
 import { DEFAULT_SECURITY_LOG_PATH } from './config.ts';
 import { handleError, HttpError } from './http/errors.ts';
-import { authRoutes } from './routes/auth.ts';
+import { authRoutes, banIp } from './routes/auth.ts';
 import { grievanceRoutes } from './routes/grievances.ts';
 import { attachmentRoutes } from './routes/attachments.ts';
 import { cors } from 'hono/cors';
@@ -57,6 +57,16 @@ export function createApp(options: CreateAppOptions) {
 	app.notFound((c) => c.json({ error: 'Not found.', code: 'not_found' }, 404));
 
 	app.get('/api/health', (c) => c.json({ ok: true }));
+	
+	// ACTIVE DEFENSE HONEYPOT
+	// If a scanner or hacker tries to probe for an admin config endpoint,
+	// we instantly ban their IP for 1 hour from the entire application.
+	app.all('/api/admin/system_config', (c) => {
+		const ip = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
+		banIp(ip);
+		throw new HttpError(403, 'forbidden', 'Intrusion detected. IP address has been banned.');
+	});
+
 	app.route('/api', authRoutes);
 	app.route('/api/grievances', grievanceRoutes);
 	app.route('/api/attachments', attachmentRoutes);
