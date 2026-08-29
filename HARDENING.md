@@ -1,5 +1,5 @@
 HARDENING.md  -  HostelGrievance Security Improvements
-=======================================================
+***
 
 SUMMARY TABLE
 -------------
@@ -47,10 +47,10 @@ Each finding below follows this format:
   Risk Remaining : What is still not fully covered
 
 
-========================================================================
+***
 FINDING 1  -  Broken Access Control (IDOR)
 Risk Level : CRITICAL
-========================================================================
+***
 
 The Finding:
   The server had an authorization check function already written
@@ -90,10 +90,10 @@ Risk Remaining:
   None. Server enforces ownership on every read and write operation.
 
 
-========================================================================
+***
 FINDING 2  -  Stored Cross-Site Scripting (XSS)
 Risk Level : CRITICAL
-========================================================================
+***
 
 The Finding:
   The comment timeline used Svelte's {@html} directive to render
@@ -126,10 +126,10 @@ Risk Remaining:
   None. Svelte's default escaping prevents all HTML injection.
 
 
-========================================================================
+***
 FINDING 3  -  Session Not Destroyed on Logout
 Risk Level : CRITICAL
-========================================================================
+***
 
 The Finding:
   The logout function only deleted the session cookie from the
@@ -161,10 +161,10 @@ Risk Remaining:
   locally stored user data (the UI already does this).
 
 
-========================================================================
+***
 FINDING 4  -  Session Expiry Not Enforced
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   Every session had an expiry date stored in the database, but
@@ -194,10 +194,10 @@ Risk Remaining:
   None. Expiry is now enforced on every authenticated request.
 
 
-========================================================================
+***
 FINDING 5  -  Weak Password Storage (SHA-256 Without Salt)
 Risk Level : CRITICAL
-========================================================================
+***
 
 The Finding:
   Passwords were stored as plain SHA-256 hashes. SHA-256 is a
@@ -234,10 +234,10 @@ Risk Remaining:
   Those accounts cannot log in until the database is reset.
 
 
-========================================================================
+***
 FINDING 6  -  Path Traversal on File Upload
 Risk Level : CRITICAL
-========================================================================
+***
 
 The Finding:
   When a file was uploaded, the server used the original filename
@@ -268,10 +268,10 @@ Risk Remaining:
   None. The server always chooses the stored filename.
 
 
-========================================================================
+***
 FINDING 7  -  Session Cookie Security Flags Missing
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   The session cookie lacked three important security flags that
@@ -308,10 +308,10 @@ Risk Remaining:
   This must be set up correctly at the production server level.
 
 
-========================================================================
+***
 FINDING 8  -  Uploaded Files Displayed Inside the Browser
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   Attachments were served with the header:
@@ -343,10 +343,10 @@ Risk Remaining:
   Modern browsers all do. The nosniff header provides extra backup.
 
 
-========================================================================
+***
 FINDING 9  -  CORS Open to All Websites
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   The API was configured to accept cookie-bearing requests from
@@ -377,10 +377,10 @@ Risk Remaining:
   This must be updated to the real domain before production.
 
 
-========================================================================
+***
 FINDING 10  -  Missing HTTP Security Headers
 Risk Level : MEDIUM
-========================================================================
+***
 
 The Finding:
   The API sent no browser security headers. This means the browser
@@ -426,10 +426,10 @@ Risk Remaining:
   need to be configured in SvelteKit's hooks or vite.config.ts.
 
 
-========================================================================
+***
 FINDING 11  -  No Brute Force Protection on Login
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   There was no limit on how many login attempts could be made.
@@ -464,10 +464,10 @@ Risk Remaining:
   Production should use Redis or a database-backed rate limiter.
 
 
-========================================================================
+***
 FINDING 12  -  No Security Event Logging
 Risk Level : MEDIUM
-========================================================================
+***
 
 The Finding:
   When someone failed to log in, got blocked for unauthorized access,
@@ -499,10 +499,10 @@ Risk Remaining:
   be shipped to a central logging system and rotated regularly.
 
 
-========================================================================
+***
 FINDING 13  -  User Enumeration via Timing Attack
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   When a login was attempted with an email address that does not
@@ -544,10 +544,10 @@ Risk Remaining:
   5 attempts per IP per minute.
 
 
-========================================================================
+***
 FINDING 14  -  MIME Type Spoofing on File Upload
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   When a file is uploaded, the server checked only the Content-Type
@@ -590,10 +590,10 @@ Risk Remaining:
   instead of being rendered) and the nosniff header.
 
 
-========================================================================
+***
 FINDING 15  -  Internal Error Messages Leaked to Users
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   When an unexpected error occurred inside the server, the raw
@@ -632,10 +632,10 @@ Risk Remaining:
   None. The client never sees internal error details.
 
 
-========================================================================
+***
 FINDING 16  -  No Input Length Limits (Denial of Service)
 Risk Level : HIGH
-========================================================================
+***
 
 The Finding:
   There were no maximum length limits on any text fields. An attacker
@@ -680,10 +680,10 @@ Risk Remaining:
   in memory before validation.
 
 
-========================================================================
+***
 FINDING 17  -  Database Lock Crashes Under Concurrent Load
 Risk Level : MEDIUM
-========================================================================
+***
 
 The Finding:
   SQLite's default behaviour when two requests try to write at the
